@@ -65,7 +65,8 @@ class PageDownloader
         if(!is_dir($destination)){
             mkdir($destination, 0770, true);
         }
-        $destination.="/".sprintf('%04d', $chapter).".cbz";
+        $fileName = (is_int($chapter)) ? sprintf('%04d', $chapter): $chapter;
+        $destination.="/".$name.'_'.$fileName.".cbz";
 
         echo("Zipping comic to $destination...\n");
         if(file_exists($destination) && !$overwrite) { return false; }

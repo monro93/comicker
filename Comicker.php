@@ -1,10 +1,13 @@
 <?php
 
+require_once __DIR__.'/Crawler/Crawler.php';
 require_once __DIR__.'/Crawler/ReadComicsTvCrawler.php';
+require_once __DIR__.'/Crawler/TuMangaOnlineComCrawler.php';
 require_once __DIR__.'/Downloader/PageDownloader.php';
 require_once __DIR__.'/FileManager/FileManager.php';
 
 use Comicker\Crawler\ReadComicsTvCrawler;
+use Comicker\Crawler\TuMangaOnlineComCrawler;
 use Comicker\Downloader\PageDownloader;
 use Comicker\FileManager\FileManager;
 
@@ -16,7 +19,7 @@ function main()
     $settings = yaml_parse_file(__DIR__.'/Resources/settings.yml');
     echo(" Done.\n");
     echo("Reading comics.yml...");
-    $comics = yaml_parse_file(__DIR__.'/Resources/comics.yml');
+    $comicsGlobal = yaml_parse_file(__DIR__.'/Resources/comics.yml');
     echo(" Done.\n");
 
     if(!isset($settings['comics_folder'])||
@@ -27,22 +30,37 @@ function main()
 
     }else {
         $readComicsTvCrawler = new ReadComicsTvCrawler();
+        $tuMangaOnlineComCrawler = new TuMangaOnlineComCrawler();
         $downloader = new PageDownloader($settings['comics_folder'], $settings['temporal_download_folder']);
         $fileManager = new FileManager($settings['comics_folder']);
-        //var_dump($comics);
-        foreach ($comics['read_comics_tv'] as $comic){
-            echo("Reading List of Chapters for '".$comic['comic']['name']."'... ");
-            $comicsUrls = $readComicsTvCrawler->crawl($comic["comic"]["url"]);
-            echo("Found ".count($comicsUrls)." Chapters\n");
-            echo("Checking local files for '".$comic['comic']['name']."'... ");
-            $comicsUrls = $fileManager->getNonExistingComicsUrls($comic["comic"]["name"], $comicsUrls);
-            echo("Done\n");
+        foreach ($comicsGlobal as $comicGlobal) {
 
-            foreach ($comicsUrls as $chapter => $comicUrls) {
-                $downloader->download($comic["comic"]["name"], $chapter, $comicUrls);
+            if (array_key_exists('read_comics_tv', $comicGlobal)) {
+                $comics = $comicGlobal['read_comics_tv'];
+                $crawler = $readComicsTvCrawler;
+            } else if (array_key_exists('tu_manga_online_com', $comicGlobal)) {
+                $comics = $comicGlobal['tu_manga_online_com'];
+                $crawler = $tuMangaOnlineComCrawler;
+            } else {
+                echo("No comics found. Exiting.\n");
+                die;
+            }
+
+            foreach ($comics as $comic) {
+                echo("Reading List of Chapters for '" . $comic['comic']['name'] . "'... ");
+                $comicsUrls = $crawler->crawl($comic["comic"]["url"]);
+                echo("Found " . count($comicsUrls) . " Chapters\n");
+                echo("Checking local files for '" . $comic['comic']['name'] . "'... ");
+                $comicsUrls = $fileManager->getNonExistingComicsUrls($comic["comic"]["name"], $comicsUrls);
+                echo("Done\n");
+
+                foreach ($comicsUrls as $chapter => $comicUrls) {
+                    $downloader->download($comic["comic"]["name"], $chapter, $comicUrls);
+                }
             }
         }
-        echo("All the job is done!");
+
+        echo("All the job is done!\n");
     }
 
 }

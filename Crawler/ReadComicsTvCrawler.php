@@ -1,23 +1,24 @@
 <?php
 
+
 namespace Comicker\Crawler;
 
-class ReadComicsTvCrawler
+class ReadComicsTvCrawler implements Crawler
 {
     const DOMAIN_URL = 'http://www.readcomics.tv/';
     const COMIC_LIST_URL = 'comic/';
     const COMIC_URL_TRANSFORMATION = '/full';
 
-    public function crawl($comicName)
+    public function crawl($comicChaptersUrl)
     {
-        $comicsUrl = $this->getComicsURL($comicName);
+        $comicsUrl = $this->getComicsURL($comicChaptersUrl);
         $comicPages = $this->getComicPagesURL($comicsUrl);
 
         return $comicPages;
     }
 
-    private function getComicsURL($comicName){
-        $html = file_get_contents(self::DOMAIN_URL.self::COMIC_LIST_URL.$comicName);
+    private function getComicsURL($comicChaptersUrl){
+        $html = file_get_contents(self::DOMAIN_URL.self::COMIC_LIST_URL.$comicChaptersUrl);
 
         if(preg_match('|<ul class="basic-list">(.*?)</ul>|s', $html, $comicList)){
             if(preg_match_all('|<a[^>]*href="([^"]*chapter-([^"]*))"[^>]*>|s', $comicList[1], $comicUrl)){
