@@ -1,8 +1,8 @@
 <?php
 
-
 namespace Comicker\FileManager;
 
+use Comicker\Entity\Comic;
 
 class FileManager
 {
@@ -13,16 +13,17 @@ class FileManager
         $this->comicPath = $comicPath;
     }
 
-    public function getNonExistingComicsUrls($name, $comicsURLs)
+    public function setComicsPendingToDownload(Comic $comic)
     {
-        $comicsURLsToDownload = $comicsURLs;
+        foreach ($comic->getChapters() as $chapter){
+            $file = $this->comicPath.'/'.$comic->getName().
+                '/'.$comic->getName().
+                '_'.$chapter->getName();
 
-        foreach ($comicsURLs as $chapter => $comicsURL){
-            $file = $this->comicPath.'/'.$name.'/'.$name.'_'.sprintf('%04d', $chapter);
             if(is_file($file.'.cbz') || is_file($file.'.zip') || is_file($file.'.cbr')){
-                unset($comicsURLsToDownload[$chapter]);
+                $chapter->setPendingToDonwload(false);
             }
         }
-        return $comicsURLsToDownload;
+
     }
 }

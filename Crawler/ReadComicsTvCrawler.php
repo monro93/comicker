@@ -3,47 +3,44 @@
 
 namespace Comicker\Crawler;
 
+use Comicker\Entity\Comic;
+use Comicker\Entity\ComicChapter;
+
 class ReadComicsTvCrawler implements Crawler
 {
     const DOMAIN_URL = 'http://www.readcomics.tv/';
     const COMIC_LIST_URL = 'comic/';
     const COMIC_URL_TRANSFORMATION = '/full';
 
-    public function crawl($comicChaptersUrl)
+    public function crawl(Comic $comic)
     {
-        $comicsUrl = $this->getComicsURL($comicChaptersUrl);
-        $comicPages = $this->getComicPagesURL($comicsUrl);
+        $this->getChapters($comic);
+        $this->getComicPagesURL($comic);
 
-        return $comicPages;
+        return $comic;
     }
 
-    private function getComicsURL($comicChaptersUrl){
-        $html = file_get_contents(self::DOMAIN_URL.self::COMIC_LIST_URL.$comicChaptersUrl);
+    private function getChapters(Comic $comic){
+        $html = file_get_contents(self::DOMAIN_URL.self::COMIC_LIST_URL.$comic->getUrl());
 
         if(preg_match('|<ul class="basic-list">(.*?)</ul>|s', $html, $comicList)){
-            if(preg_match_all('|<a[^>]*href="([^"]*chapter-([^"]*))"[^>]*>|s', $comicList[1], $comicUrl)){
-                $comics = [];
-                for($i = 0; $i< count($comicUrl[1]); $i++){
-                    $comics[$comicUrl[2][$i]] = $comicUrl[1][$i].self::COMIC_URL_TRANSFORMATION;
+            if(preg_match_all('|<a[^>]*href="([^"]*chapter-([^"]*))"[^>]*>|s', $comicList[1], $chapterRaw)){
+
+                for($i = 0; $i< count($chapterRaw[1]); $i++){
+                    $chapter = new ComicChapter($chapterRaw[2][$i], $chapterRaw[1][$i].self::COMIC_URL_TRANSFORMATION);
+                    $comic->addChapter($chapter);
                 }
-                return $comics;
             }
         }
-        return -1;
     }
 
-    private function getComicPagesURL($comicsUrl){
-        $pagesUrl = [];
-        if(is_array($comicsUrl)) {
-            foreach ($comicsUrl as $key => $comicUrl) {
-                $html = file_get_contents($comicUrl);
-                if (preg_match_all('|<img class="chapter_img"[^>]*src="([^"]*)"|s', $html, $pageUrl)) {
-                    $pagesUrl[$key] = $pageUrl[1];
-                }
+    private function getComicPagesURL(Comic $comic){
+        foreach ($comic->getChapters() as $chapter) {
+            $html = file_get_contents($chapter->getChapterUrl());
+            if (preg_match_all('|<img class="chapter_img"[^>]*src="([^"]*)"|s', $html, $pageUrl)) {
+                $chapter->addPages($pageUrl[1]);
             }
-            return $pagesUrl;
         }
-        return -1;
     }
 
 }

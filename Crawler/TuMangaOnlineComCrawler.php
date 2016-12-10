@@ -2,41 +2,47 @@
 
 namespace Comicker\Crawler;
 
+use Comicker\Entity\Comic;
+use Comicker\Entity\ComicChapter;
 
 class TuMangaOnlineComCrawler implements Crawler
 {
     const API_URL = 'http://www.tumangaonline.com/api/v1/mangas/';
     const API_URL_END = '/capitulos?page=';
+    const COMIC_URL_INFO = 'http://www.tumangaonline.com/api/v1/mangas/';
+    const CHAPTER_URL = 'http://www.tumangaonline.com/lector/%s/%s/%s/%s';
     const IMAGE_URL = 'http://img1.tumangaonline.com/subidas/%s/%s/%s/%s';
     const MAX_NUMBER_RETIRES = 3;
-    const WAIT_TIME_AVOID_BAN = 40;
-    public function __construct()
-    {
+    const WAIT_TIME_AVOID_BAN = 121;
 
+    public function crawl(Comic $comic)
+    {
+        $this->getComicsURL($comic);
+
+        return $comic;
     }
 
-    public function crawl($comicChaptersUrl)
-    {
-        $comicsUrl = $this->getComicsURL($comicChaptersUrl);
+    private function getUrlComicName(Comic $comic){
+        $html = file_get_contents(self::COMIC_URL_INFO.$comic->getUrl());
 
-        return $comicsUrl;
+        return json_decode($html, true)["nombreUrl"];
     }
 
-    private function getComicsUrl($comicChaptersUrl)
+    private function getComicsUrl(Comic $comic)
     {
-        $chapters = [];
+        $UrlComicName = $this->getUrlComicName($comic);
+
         $totalPages = 1;
 
         for($page = 1; $page<=$totalPages; $page++){
-            echo(self::API_URL.$comicChaptersUrl.self::API_URL_END.$page);
-            $html = file_get_contents(self::API_URL.$comicChaptersUrl.self::API_URL_END.$page);
+            $html = file_get_contents(self::API_URL.$comic->getUrl().self::API_URL_END.$page);
 
             $attemptsRemaining = self::MAX_NUMBER_RETIRES;
             while($html == false && $attemptsRemaining > 0 ){
-                echo("TuMangaOnline.com is baning us. Waiting 120 seconds to try again...\n");
-                sleep(121);
+                echo("TuMangaOnline.com is baning us. Waiting ".self::WAIT_TIME_AVOID_BAN." seconds to try again...\n");
+                sleep(self::WAIT_TIME_AVOID_BAN);
                 echo("Trying again...\n");
-                $html = file_get_contents(self::API_URL.$comicChaptersUrl.self::API_URL_END.$page);
+                $html = file_get_contents(self::API_URL.$comic->getUrl().self::API_URL_END.$page);
                 $attemptsRemaining--;
             }
 
@@ -46,27 +52,46 @@ class TuMangaOnlineComCrawler implements Crawler
                 }
             }
             $json = json_decode($html, true);
+
             foreach($json['data'] as $chapterInfo){
-                $chapNumberRaw = $chapterInfo['numCapitulo'];
-                $chapterNumber = str_replace('.00', '', $chapNumberRaw);
-                $idScan = $chapterInfo['subidas'][0]['idScan'];
-                $imagesRaw = $chapterInfo['subidas'][0]['imagenes'];
-                if(preg_match_all('|"([^"]*\.[^"]{3,5})\\"|', $imagesRaw, $images)){
-                    foreach ($images[1] as $image){
-                        $chapters[$chapterNumber][] =
-                            sprintf(self::IMAGE_URL,
-                                $comicChaptersUrl,
-                                $chapNumberRaw,
-                                $idScan,
-                                $image);
-                    }
-                }
-
+                $comic->addChapter(
+                    $this->processChapterInfo(
+                        $chapterInfo,
+                        $comic,
+                        $UrlComicName
+                    )
+                );
             }
+        }
+    }
 
+    private function processChapterInfo($chapterInfo, Comic $comic, $UrlComicName){
+        $chapNumberRaw = $chapterInfo['numCapitulo'];
+        $chapterNumber = str_replace('.00', '', $chapNumberRaw);
+        $idScan = $chapterInfo['subidas'][0]['idScan'];
+        $imagesRaw = $chapterInfo['subidas'][0]['imagenes'];
+        $chapter = new ComicChapter(
+            $chapterNumber,
+            sprintf(self::CHAPTER_URL,
+                $UrlComicName,
+                $comic->getUrl(),
+                $chapNumberRaw,
+                $idScan
+            )
+        );
+        if(preg_match_all('|"([^"]*\.[^"]{3,5})\\"|', $imagesRaw, $images)){
+            foreach ($images[1] as $image){
+                $chapter->addPage(
+                    sprintf(self::IMAGE_URL,
+                        $comic->getUrl(),
+                        $chapNumberRaw,
+                        $idScan,
+                        $image)
+                );
+            }
         }
 
-        return $chapters;
+        return $chapter;
     }
 
 }

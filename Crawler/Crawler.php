@@ -2,13 +2,14 @@
 
 namespace Comicker\Crawler;
 
+use Comicker\Entity\Comic;
 
 interface Crawler
 {
     /**
-     * @param $comicChaptersUrl
-     * @return array
+     * @param Comic $comic
+     * @return Comic
      */
-    public function crawl($comicChaptersUrl);
+    public function crawl(Comic $comic);
 
 }
