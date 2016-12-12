@@ -3,43 +3,60 @@
 require_once __DIR__.'/Crawler/Crawler.php';
 require_once __DIR__.'/Crawler/ReadComicsTvCrawler.php';
 require_once __DIR__.'/Crawler/TuMangaOnlineComCrawler.php';
+
 require_once __DIR__.'/Downloader/PageDownloader.php';
 require_once __DIR__.'/FileManager/FileManager.php';
+
 require_once __DIR__.'/Entity/Comic.php';
 require_once __DIR__.'/Entity/ComicChapter.php';
-require_once __DIR__.'/Notifier/TelegramNotifier.php';
+
+require_once __DIR__.'/Event/Event.php';
+require_once __DIR__.'/Event/ComicDownloadedEvent.php';
+require_once __DIR__.'/Event/EventDispatcher.php';
+require_once __DIR__.'/Event/ComicEventDispatcher.php';
+require_once __DIR__.'/Event/EventListener.php';
+require_once __DIR__.'/Event/ComicEventListener.php';
+require_once __DIR__.'/Event/TelegramListener.php';
 
 use Comicker\Crawler\ReadComicsTvCrawler;
 use Comicker\Crawler\TuMangaOnlineComCrawler;
 use Comicker\Downloader\PageDownloader;
 use Comicker\FileManager\FileManager;
 use Comicker\Entity\Comic;
-use Comicker\Notifier\TelegramNotifier;
+use Comicker\Event\TelegramListener;
+use Comicker\Event\ComicEventDispatcher;
 
 main();
 
 function main()
 {
-    echo("Reading settings.yml...");
     $settings = yaml_parse_file(__DIR__.'/Resources/settings.yml');
-    echo(" Done.\n");
-    echo("Reading comics.yml...");
     $comicsGlobal = yaml_parse_file(__DIR__.'/Resources/comics.yml');
-    echo(" Done.\n");
 
     if(!isset($settings['comics_folder'])||
         !isset($settings['temporal_download_folder'])) {
-
         echo("Error: settings.yml doesn't has a proper format");
         die;
     }
 
+    $comicEventDispatcher = new ComicEventDispatcher();
+    if($settings['telegram']['use_telegram'] == true){
+        if(isset( $settings['telegram']['telegram_api_key']) &&
+            isset($settings['telegram']['telegram_chat_id'])){
+            $comicEventDispatcher->addListener(
+                new TelegramListener(
+                    $settings['telegram']['telegram_api_key'],
+                    $settings['telegram']['telegram_chat_id']
+                )
+            );
+        }
+
+    }
     $readComicsTvCrawler = new ReadComicsTvCrawler();
     $tuMangaOnlineComCrawler = new TuMangaOnlineComCrawler();
+
     $downloader = new PageDownloader($settings['comics_folder'], $settings['temporal_download_folder']);
     $fileManager = new FileManager($settings['comics_folder']);
-    $telegramNotifier = new TelegramNotifier($settings['telegram']['telegram_api_key'],
-        $settings['telegram']['telegram_chat_id']);
 
     foreach ($comicsGlobal as $comicGlobal) {
 
@@ -64,12 +81,6 @@ function main()
             echo("Done\n");
 
             $downloader->download($comic);
-            if($settings['telegram']['use_telegram'] == true){
-                foreach ($comic->getChapters() as $chapter) {
-                    if ($chapter->isPendingToDonwload())
-                        $telegramNotifier->sendComic($comic, $chapter);
-                }
-            }
         }
     }
 

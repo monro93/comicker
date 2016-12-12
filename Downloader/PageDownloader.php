@@ -4,6 +4,8 @@ namespace Comicker\Downloader;
 
 use Comicker\Entity\Comic;
 use Comicker\Entity\ComicChapter;
+use Comicker\Event\ComicDownloadedEvent;
+use Comicker\Event\ComicEventDispatcher;
 use ZipArchive;
 
 class PageDownloader
@@ -12,12 +14,19 @@ class PageDownloader
     const MAX_WIDTH = -1;
     const MAX_HEIGHT = 1000;
 
+    private $dispatcher;
     private $type;
     private $comics_folder;
     private $tempFolder;
 
-    public function __construct($comics_folder = ".", $tempFolder = "/var/tmp", $type = PageDownloader::CBZ_TYPE)
+    public function __construct(
+        ComicEventDispatcher $dispatcher,
+        $comics_folder = ".",
+        $tempFolder = "/var/tmp",
+        $type = PageDownloader::CBZ_TYPE
+    )
     {
+        $this->dispatcher = $dispatcher;
         $this->type = $type;
         $this->comics_folder = $comics_folder;
         $this->tempFolder = $tempFolder;
@@ -38,6 +47,7 @@ class PageDownloader
             }
 
             $this->deleteTempFiles($comic->getName(), $files_downloaded);
+            $this->dispatcher->dispatch('comic_downloaded', new ComicDownloadedEvent($comic, $chapter));
         }
 
     }

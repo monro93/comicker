@@ -1,20 +1,29 @@
 <?php
 
-namespace Comicker\Notifier;
+namespace Comicker\Event;
 
-
-use Comicker\Entity\ComicChapter;
 use Comicker\Entity\Comic;
+use Comicker\Entity\ComicChapter;
 
-class TelegramNotifier
+class TelegramListener implements ComicEventListener
 {
     const API_URL = 'https://api.telegram.org/bot';
+    /**
+     * @var string
+     */
     private $botToken;
 
     /**
-     * @todo It should read the ID from the /start command, but for that It has to be a service and should allow multiuser
+     * @var string
      */
     private $chatId;
+
+    public function onComicDownloaded(ComicDownloadedEvent $event = null)
+    {
+        if(!isset($event))
+            return;
+        $this->sendComic($event->getComic(), $event->getComicChapter());
+    }
 
     public function __construct($botToken, $chatId)
     {
@@ -22,7 +31,7 @@ class TelegramNotifier
         $this->chatId = $chatId;
     }
 
-    public function sendComic(Comic $comic, ComicChapter $chapter)
+    private function sendComic(Comic $comic, ComicChapter $chapter)
     {
         $requestMessage = curl_init(self::API_URL.$this->botToken.'/sendMessage'.
             '?chat_id='.    $this->chatId.
@@ -34,18 +43,17 @@ class TelegramNotifier
 
         $requestDocument = curl_init(self::API_URL.$this->botToken.'/sendDocument');
 
-        // send a file
         curl_setopt($requestDocument, CURLOPT_POST, true);
         curl_setopt(
             $requestDocument,
             CURLOPT_POSTFIELDS,
             array(
-                'document'  =>  '@' . realpath($chapter->getFilePath()),
+                'document'  =>  new \CURLFile(realpath($chapter->getFilePath())),
                 'chat_id'   =>  $this->chatId
             ));
 
         curl_exec($requestDocument);
-        @curl_close($requestDocument);
+        curl_close($requestDocument);
     }
 
 }
