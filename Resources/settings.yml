@@ -1,0 +1,7 @@
+comics_folder: './Comics'
+temporal_download_folder:  './tmp'
+
+telegram:
+  use_telegram: true
+  telegram_api_key: ''
+  telegram_chat_id: ''
