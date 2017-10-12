@@ -2,49 +2,8 @@
   - comic:
       name: 'Invincible-Iron-Man-2015'
       url:  'invincible-iron-man-2015'
-  - comic:
-      name: 'The-Mighty-Thor-2016'
-      url:  'the-mighty-thor-2016'
-#  - comic:
-#      name: 'Civil-War-II'
-#      url:  'civil-war-ii'
-#  - comic:
-#      name: 'Captain-America-Steve-Rogers'
-#      url:  'captain-america-steve-rogers'
-#  - comic:
-#      name: 'Spider-Man-2016'
-#      url:  'spider-man-2016'
-#  - comic:
-#      name: 'Doctor-Strange-Last-Days-of-Magic'
-#      url:  'doctor-strange-last-days-of-magic'
-#  - comic:
-#      name: 'All-New-Wolverine-2016'
-#      url:  'all-new-wolverine-2016'
-#  - comic:
-#      name: 'The-Astonishing-Ant-man'
-#      url:  'the-astonishing-ant-man'
-#  - comic:
-#      name: 'Batman-Superman'
-#      url:  'batman-superman'
-#  - comic:
-#      name: 'Old-Man-Logan-Secret-Wars-2015'
-#      url:  'old-man-logan-secret-wars-2015'
-#  - comic:
-#      name: 'Planet-Hulk'
-#      url:  'planet-hulk'
-#  - comic:
-#      name: 'The-Amazing-Spider-Man-2015'
-#      url:  'the-amazing-spider-man-2015'
-#  - comic:
-#      name: 'Daredevil-2016'
-#      url:  'daredevil-2016'
-#  - comic:
-#      name: 'old-man-logan'
-#      url:  'old-man-logan'
 - tu_manga_online_com:
   - comic:
       name: 'Boku-no-hero-Academia'
       url:  '8428'
-  - comic:
-      name: 'One-Punch-Man'
-      url:  '9276'
+      
