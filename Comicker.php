@@ -55,7 +55,7 @@ function main()
     $readComicsTvCrawler = new ReadComicsTvCrawler();
     $tuMangaOnlineComCrawler = new TuMangaOnlineComCrawler();
 
-    $downloader = new PageDownloader($settings['comics_folder'], $settings['temporal_download_folder']);
+    $downloader = new PageDownloader($comicEventDispatcher, $settings['comics_folder'], $settings['temporal_download_folder']);
     $fileManager = new FileManager($settings['comics_folder']);
 
     foreach ($comicsGlobal as $comicGlobal) {
